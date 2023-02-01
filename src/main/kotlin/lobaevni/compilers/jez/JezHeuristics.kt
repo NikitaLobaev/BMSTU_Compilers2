@@ -1,5 +1,7 @@
 package lobaevni.compilers.jez
 
+import lobaevni.compilers.jez.JezHeuristics.shorten
+
 object JezHeuristics {
 
     /**
@@ -7,20 +9,40 @@ object JezHeuristics {
      * [JezEquation].
      */
     internal fun JezEquation.shorten(state: JezState): JezEquation {
-        val leftIndex = u.zip(v).indexOfFirst { (uElement, vElement) ->
+        var newEquation = this
+        val leftIndex = newEquation.u.zip(newEquation.v).indexOfFirst { (uElement, vElement) ->
             uElement != vElement
-        }
-        val rightIndex = u.reversed().zip(v.reversed()).indexOfFirst { (uElement, vElement) ->
-            uElement != vElement
-        }
-        val newEquation = JezEquation(
-            u = u.subList(leftIndex, u.size - rightIndex),
-            v = v.subList(leftIndex, v.size - rightIndex),
+        }.takeIf { it != -1 } ?: minOf(newEquation.u.size, newEquation.v.size)
+        newEquation = JezEquation(
+            u = newEquation.u.drop(leftIndex),
+            v = newEquation.v.drop(leftIndex),
         )
-        state.history.apply {
-            +""""$newEquation""""
-        }
+
+        val rightIndex = newEquation.u.reversed().zip(newEquation.v.reversed()).indexOfFirst { (uElement, vElement) ->
+            uElement != vElement
+        }.takeIf { it != -1 } ?: minOf(newEquation.u.size, newEquation.v.size)
+        newEquation = JezEquation(
+            u = newEquation.u.dropLast(rightIndex),
+            v = newEquation.v.dropLast(rightIndex),
+        )
+
+        state.history.addEquation(newEquation)
+
         return newEquation
+    }
+
+    /**
+     * Heuristic of finding contradictions in the [JezEquation] at left or at right sides of it.
+     * @return true, if contradiction was found, false otherwise.
+     */
+    internal fun JezEquation.findSideContradictions(): Boolean {
+        val shortenedEquation = shorten(JezState())
+        return (shortenedEquation.u.firstOrNull() is JezElement.Constant &&
+                shortenedEquation.v.firstOrNull() is JezElement.Constant) ||
+                (shortenedEquation.u.lastOrNull() is JezElement.Constant &&
+                shortenedEquation.v.lastOrNull() is JezElement.Constant) ||
+                (shortenedEquation.u.isEmpty() && shortenedEquation.v.find { it is JezElement.Constant } != null) ||
+                (shortenedEquation.v.isEmpty() && shortenedEquation.u.find { it is JezElement.Constant } != null)
     }
 
     /**

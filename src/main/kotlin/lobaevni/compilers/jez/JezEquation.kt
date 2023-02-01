@@ -6,25 +6,25 @@ data class JezEquation(
 ) {
 
     /**
-     * TODO
+     * @return all used in this [JezEquation] constants.
      */
     fun getUsedConstants(): JezConstants =
         (u + v).toSet().filterIsInstance<JezElement.Constant>()
 
     /**
-     * TODO
+     * @return all used in this [JezEquation] source constants.
      */
     fun getUsedSourceConstants(): JezSourceConstants =
         (u + v).toSet().filterIsInstance<JezElement.Constant.Source>()
 
     /**
-     * TODO
+     * @return all used in this [JezEquation] generated constants.
      */
     fun getUsedGeneratedConstants(): JezGeneratedConstants =
         (u + v).toSet().filterIsInstance<JezElement.Constant.Generated>()
 
     /**
-     * TODO
+     * @return all used in this [JezEquation] variables.
      */
     fun getUsedVariables(): JezVariables =
         (u + v).toSet().filterIsInstance<JezElement.Variable>()

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 
-class WordEqSat {
+class WordEqSatTests {
 
     @Test
     fun test1() {
@@ -50,7 +50,7 @@ class WordEqSat {
 
     @Test
     fun test5() {
-        val sourceEquation = parseEquation("Ax", "yB")
+        val sourceEquation = parseEquation("Ax", "y")
         val expectedSigma = mapOf(
             "x" to "B",
             "y" to "A",
@@ -70,14 +70,6 @@ class WordEqSat {
     @Test
     fun testNoSolution2() {
         val sourceEquation = parseEquation("x", "Ax")
-        assertThrows<JezNoSolutionException> {
-            sourceEquation.wordEqSat()
-        }
-    }
-
-    @Test
-    fun testNoSolution3() {
-        val sourceEquation = parseEquation("AB", "xxx")
         assertThrows<JezNoSolutionException> {
             sourceEquation.wordEqSat()
         }

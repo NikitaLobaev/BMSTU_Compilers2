@@ -2,6 +2,17 @@ package lobaevni.compilers.jez
 
 import io.github.rchowell.dotlin.DotRootGraph
 import io.github.rchowell.dotlin.digraph
+import lobaevni.compilers.jez.Jez.addConstantsReplacement
+import lobaevni.compilers.jez.Jez.addVariablesReplacement
+import lobaevni.compilers.jez.Jez.blockComp
+import lobaevni.compilers.jez.Jez.blockCompNCr
+import lobaevni.compilers.jez.Jez.checkEmptySolution
+import lobaevni.compilers.jez.Jez.findTrivialSolutions
+import lobaevni.compilers.jez.Jez.pairComp
+import lobaevni.compilers.jez.Jez.pop
+import lobaevni.compilers.jez.Jez.toJezSourceConstants
+import lobaevni.compilers.jez.Jez.wordEqSat
+import lobaevni.compilers.jez.JezHeuristics.findSideContradictions
 import lobaevni.compilers.jez.JezHeuristics.getSideLetters
 import lobaevni.compilers.jez.JezHeuristics.shorten
 
@@ -26,8 +37,40 @@ internal data class JezState(
     val sigmaLeft: JezSigma = mutableMapOf(),
     val sigmaRight: JezSigma = mutableMapOf(),
     val replaces: JezReplaces = mutableMapOf(),
-    val history: DotRootGraph = digraph("recompression") {},
+    val history: JezHistory = JezHistory(),
 )
+
+internal data class JezHistory(
+    val graph: DotRootGraph = digraph(JEZ_HISTORY_GRAPH_NAME) {},
+    private var lastEquationStr: String? = null,
+) {
+
+    fun addEquation(equation: JezEquation, updateLast: Boolean = true) {
+        val equationStr = "\"$equation\""
+        if (equationStr == lastEquationStr) {
+            return
+        }
+
+        graph.apply {
+            if (updateLast) {
+                +equationStr
+            } else {
+                +equationStr + {
+                    color = "red"
+                }
+            }
+            lastEquationStr?.let { lastEquationStr ->
+                lastEquationStr - equationStr
+            }
+            if (updateLast) {
+                lastEquationStr = equationStr
+            }
+        }
+    }
+
+}
+
+private const val JEZ_HISTORY_GRAPH_NAME = "recompression"
 
 object Jez {
 
@@ -36,23 +79,23 @@ object Jez {
      * @throws JezNoSolutionException if no solution was found.
      */
     fun JezEquation.wordEqSat(
-        maxIterationsCount: Int = (u.size + v.size) * 2, //TODO: maybe decrease this default value
+        maxIterationsCount: Int = (u.size + v.size) * 2,
     ): JezResult {
         val state = JezState()
         for (variable in getUsedVariables()) {
             state.sigmaLeft.getOrPut(variable) { emptyList() }
             state.sigmaRight.getOrPut(variable) { emptyList() }
         }
-        state.history.apply {
-            +""""$this""""
-        }
+        state.history.addEquation(this)
 
         var newEquation = this
         var iteration = 0
         while (!newEquation.checkEmptySolution() &&
-                newEquation.u.size > 1 && newEquation.v.size > 1 &&
+                (newEquation.u.size > 1 || newEquation.v.size > 1) &&
                 iteration < maxIterationsCount) {
             newEquation = newEquation.shorten(state)
+
+            if (newEquation.findSideContradictions()) break
 
             newEquation = newEquation.blockComp(state)
 
@@ -72,7 +115,7 @@ object Jez {
             sigma[entry.key] = sigma[entry.key]!! + entry.value.reversed()
         }
 
-        return JezResult(sigma, state.history)
+        return JezResult(sigma, state.history.graph)
     }
 
     /**
@@ -87,6 +130,8 @@ object Jez {
                 u = newEquation.u.blockCompNCr(state, constant),
                 v = newEquation.v.blockCompNCr(state, constant),
             )
+
+            state.history.addEquation(newEquation)
         }
         return newEquation
     }
@@ -115,6 +160,8 @@ object Jez {
                     u = newEquation.u.pairCompNCr(a, b, gc),
                     v = newEquation.v.pairCompNCr(a, b, gc),
                 )
+
+                state.history.addEquation(newEquation)
             }
         }
         return newEquation
@@ -134,7 +181,7 @@ object Jez {
          * Pops the specified [constant] from the [variable].
          * @param left if true, then pop [constant] from the left side of the [variable], otherwise from the right side.
          */
-        fun JezEquationPart.pop(
+        fun JezEquationPart.popPart(
             variable: JezElement.Variable,
             constant: JezElement.Constant,
             left: Boolean,
@@ -154,23 +201,36 @@ object Jez {
 
         var newEquation = this
         for (variable in getUsedVariables()) {
-            break //TODO: эвристика - заглянуть в будущие префиксы, нет ли противоречий
             val firstLetter = lettersRight.firstOrNull()
             firstLetter?.let {
-                state.addVariablesReplacement(variable, listOf(firstLetter), true)
-                newEquation = newEquation.copy(
-                    u = newEquation.u.pop(variable, firstLetter, true),
-                    v = newEquation.v.pop(variable, firstLetter, true),
+                val newPossibleEquation = newEquation.copy(
+                    u = newEquation.u.popPart(variable, firstLetter, true),
+                    v = newEquation.v.popPart(variable, firstLetter, true),
                 )
+                if (!newPossibleEquation.findSideContradictions()) {
+                    state.addVariablesReplacement(variable, listOf(firstLetter), true)
+                    newEquation = newPossibleEquation
+
+                    state.history.addEquation(newEquation)
+                } else {
+                    state.history.addEquation(newPossibleEquation, false)
+                }
             }
 
             val lastLetter = lettersLeft.firstOrNull()
             lastLetter?.let {
-                state.addVariablesReplacement(variable, listOf(lastLetter), false)
-                newEquation = newEquation.copy(
-                    u = newEquation.u.pop(variable, lastLetter, false),
-                    v = newEquation.v.pop(variable, lastLetter, false),
+                val newPossibleEquation = newEquation.copy(
+                    u = newEquation.u.popPart(variable, lastLetter, false),
+                    v = newEquation.v.popPart(variable, lastLetter, false),
                 )
+                if (!newPossibleEquation.findSideContradictions()) {
+                    state.addVariablesReplacement(variable, listOf(lastLetter), false)
+                    newEquation = newPossibleEquation
+
+                    state.history.addEquation(newEquation)
+                } else {
+                    state.history.addEquation(newPossibleEquation, false)
+                }
             }
             break
         }
@@ -220,7 +280,7 @@ object Jez {
             .map { element ->
                 Acc(listOf(), element, 1)
             }
-            .stream() //TODO: а почему обязательно преобразовывать в stream?
+            .stream()
             .reduce(null) { lastAcc, currentAcc ->
                 if (lastAcc == null) {
                     currentAcc
@@ -250,24 +310,22 @@ object Jez {
     private fun JezEquation.findTrivialSolutions(
         state: JezState,
     ): Boolean {
+        val shortenedEquation = shorten(state)
+        if (shortenedEquation != this) {
+            return shortenedEquation.findTrivialSolutions(state)
+        }
+
         if (checkEmptySolution()) return true
 
-        if (u == v) return true
-
-        if (u.size == 1 && v.size == 1) {
-            val uFirst = u.first()
-            val vFirst = v.first()
-            if (uFirst is JezElement.Constant && vFirst is JezElement.Variable) {
-                return JezEquation(v, u).findTrivialSolutions(state)
-            }
-
-            if (uFirst !is JezElement.Variable) {
-                return false
-            }
-
-            if (vFirst is JezElement.Constant) {
-                state.addVariablesReplacement(uFirst, vFirst.source, true)
-            }
+        val uFirst = u.firstOrNull()
+        val vFirst = v.firstOrNull()
+        if (u.size == 1 && uFirst is JezElement.Variable) {
+            val value = v.filterIsInstance<JezElement.Constant>().toJezSourceConstants()
+            state.addVariablesReplacement(uFirst, value, true)
+            return true
+        } else if (v.size == 1 && vFirst is JezElement.Variable) {
+            val value = u.filterIsInstance<JezElement.Constant>().toJezSourceConstants()
+            state.addVariablesReplacement(vFirst, value, true)
             return true
         }
 

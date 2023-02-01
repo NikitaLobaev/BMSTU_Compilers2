@@ -5,22 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6b72d84a-efb9-4c03-8d6c-b3fc86c6ea7b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradlew" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradlew.bat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/lobaevni/compilers/Main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/lobaevni/compilers/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/lobaevni/compilers/Main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/lobaevni/compilers/jez/Jez.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/lobaevni/compilers/jez/Jez.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/lobaevni/compilers/jez/JezEquation.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/lobaevni/compilers/jez/JezEquation.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/lobaevni/compilers/jez/JezHeuristics.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/lobaevni/compilers/jez/JezHeuristics.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/lobaevni/compilers/jez/WordEqSat.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/lobaevni/compilers/jez/WordEqSatTests.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -200,10 +190,10 @@
     <recent_temporary>
       <list>
         <item itemvalue="Kotlin.MainKt" />
-        <item itemvalue="Gradle.WordEqSat.test5" />
-        <item itemvalue="Gradle.WordEqSat.test4" />
         <item itemvalue="Gradle.WordEqSat" />
         <item itemvalue="Gradle.WordEqSat.test3" />
+        <item itemvalue="Gradle.WordEqSat.test5" />
+        <item itemvalue="Gradle.WordEqSat.test4" />
       </list>
     </recent_temporary>
   </component>
