@@ -26,7 +26,7 @@ object JezHeuristics {
             v = newEquation.v.dropLast(rightIndex),
         )
 
-        state.history.addEquation(newEquation)
+        state.history.addEquation(newEquation, "shorten")
 
         return newEquation
     }

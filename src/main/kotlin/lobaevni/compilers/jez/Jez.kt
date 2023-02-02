@@ -1,17 +1,8 @@
 package lobaevni.compilers.jez
 
+import io.github.rchowell.dotlin.DotEdgeAttrStmt
 import io.github.rchowell.dotlin.DotRootGraph
 import io.github.rchowell.dotlin.digraph
-import lobaevni.compilers.jez.Jez.addConstantsReplacement
-import lobaevni.compilers.jez.Jez.addVariablesReplacement
-import lobaevni.compilers.jez.Jez.blockComp
-import lobaevni.compilers.jez.Jez.blockCompNCr
-import lobaevni.compilers.jez.Jez.checkEmptySolution
-import lobaevni.compilers.jez.Jez.findTrivialSolutions
-import lobaevni.compilers.jez.Jez.pairComp
-import lobaevni.compilers.jez.Jez.pop
-import lobaevni.compilers.jez.Jez.toJezSourceConstants
-import lobaevni.compilers.jez.Jez.wordEqSat
 import lobaevni.compilers.jez.JezHeuristics.findSideContradictions
 import lobaevni.compilers.jez.JezHeuristics.getSideLetters
 import lobaevni.compilers.jez.JezHeuristics.shorten
@@ -26,11 +17,11 @@ internal typealias JezGeneratedConstants = List<JezElement.Constant.Generated>
 internal typealias JezVariables = List<JezElement.Variable>
 
 open class JezException(message: String) : java.lang.RuntimeException(message)
-class JezNoSolutionException : JezException("Couldn't solve the equation")
 
 data class JezResult(
     val sigma: JezSigma,
     val history: DotRootGraph,
+    val isSolved: Boolean,
 )
 
 internal data class JezState(
@@ -45,7 +36,7 @@ internal data class JezHistory(
     private var lastEquationStr: String? = null,
 ) {
 
-    fun addEquation(equation: JezEquation, updateLast: Boolean = true) {
+    fun addEquation(equation: JezEquation, comment: String = "", updateLast: Boolean = true) {
         val equationStr = "\"$equation\""
         if (equationStr == lastEquationStr) {
             return
@@ -60,7 +51,9 @@ internal data class JezHistory(
                 }
             }
             lastEquationStr?.let { lastEquationStr ->
-                lastEquationStr - equationStr
+                lastEquationStr - equationStr + {
+                    label = comment
+                }
             }
             if (updateLast) {
                 lastEquationStr = equationStr
@@ -76,7 +69,6 @@ object Jez {
 
     /**
      * Checking the satisfiability of a word equation.
-     * @throws JezNoSolutionException if no solution was found.
      */
     fun JezEquation.wordEqSat(
         maxIterationsCount: Int = (u.size + v.size) * 2,
@@ -106,16 +98,18 @@ object Jez {
             iteration++
         }
 
-        if (!newEquation.findTrivialSolutions(state)) {
-            throw JezNoSolutionException()
-        }
+        val isSolved = newEquation.findTrivialSolutions(state)
 
         val sigma = state.sigmaLeft
         for (entry in state.sigmaRight) {
             sigma[entry.key] = sigma[entry.key]!! + entry.value.reversed()
         }
 
-        return JezResult(sigma, state.history.graph)
+        return JezResult(
+            sigma,
+            state.history.graph,
+            isSolved = isSolved,
+        )
     }
 
     /**
@@ -131,7 +125,7 @@ object Jez {
                 v = newEquation.v.blockCompNCr(state, constant),
             )
 
-            state.history.addEquation(newEquation)
+            state.history.addEquation(newEquation, "all blocks of $constant")
         }
         return newEquation
     }
@@ -161,7 +155,7 @@ object Jez {
                     v = newEquation.v.pairCompNCr(a, b, gc),
                 )
 
-                state.history.addEquation(newEquation)
+                state.history.addEquation(newEquation, "($a, $b) --> $gc")
             }
         }
         return newEquation
@@ -207,13 +201,14 @@ object Jez {
                     u = newEquation.u.popPart(variable, firstLetter, true),
                     v = newEquation.v.popPart(variable, firstLetter, true),
                 )
+                val comment = "$variable --> ($firstLetter, $variable)"
                 if (!newPossibleEquation.findSideContradictions()) {
                     state.addVariablesReplacement(variable, listOf(firstLetter), true)
                     newEquation = newPossibleEquation
 
-                    state.history.addEquation(newEquation)
+                    state.history.addEquation(newEquation, comment)
                 } else {
-                    state.history.addEquation(newPossibleEquation, false)
+                    state.history.addEquation(newPossibleEquation, comment, false)
                 }
             }
 
@@ -223,13 +218,14 @@ object Jez {
                     u = newEquation.u.popPart(variable, lastLetter, false),
                     v = newEquation.v.popPart(variable, lastLetter, false),
                 )
+                val comment = "$variable --> ($variable, $lastLetter)"
                 if (!newPossibleEquation.findSideContradictions()) {
                     state.addVariablesReplacement(variable, listOf(lastLetter), false)
                     newEquation = newPossibleEquation
 
-                    state.history.addEquation(newEquation)
+                    state.history.addEquation(newEquation, comment)
                 } else {
-                    state.history.addEquation(newPossibleEquation, false)
+                    state.history.addEquation(newPossibleEquation, comment, false)
                 }
             }
             break

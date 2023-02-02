@@ -3,9 +3,9 @@ package lobaevni.compilers.jez
 import lobaevni.compilers.jez.Jez.wordEqSat
 import lobaevni.compilers.jez.Utils.parseEquation
 import lobaevni.compilers.jez.Utils.toStringMap
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import kotlin.test.assertEquals
 
 class WordEqSatTests {
 
@@ -16,7 +16,9 @@ class WordEqSatTests {
             "x" to "",
             "y" to "",
         )
-        val actualSigma = sourceEquation.wordEqSat().sigma.toStringMap()
+        val result = sourceEquation.wordEqSat()
+        assertTrue(result.isSolved)
+        val actualSigma = result.sigma.toStringMap()
         assertEquals(expectedSigma, actualSigma)
     }
 
@@ -24,7 +26,9 @@ class WordEqSatTests {
     fun test2() {
         val sourceEquation = parseEquation("A", "A")
         val expectedSigma = emptyMap<String, String>()
-        val actualSigma = sourceEquation.wordEqSat().sigma.toStringMap()
+        val result = sourceEquation.wordEqSat()
+        assertTrue(result.isSolved)
+        val actualSigma = result.sigma.toStringMap()
         assertEquals(expectedSigma, actualSigma)
     }
 
@@ -34,7 +38,9 @@ class WordEqSatTests {
         val expectedSigma = mapOf(
             "x" to "A",
         )
-        val actualSigma = sourceEquation.wordEqSat().sigma.toStringMap()
+        val result = sourceEquation.wordEqSat()
+        assertTrue(result.isSolved)
+        val actualSigma = result.sigma.toStringMap()
         assertEquals(expectedSigma, actualSigma)
     }
 
@@ -44,35 +50,37 @@ class WordEqSatTests {
         val expectedSigma = mapOf(
             "x" to "B",
         )
-        val actualSigma = sourceEquation.wordEqSat().sigma.toStringMap()
+        val result = sourceEquation.wordEqSat()
+        assertTrue(result.isSolved)
+        val actualSigma = result.sigma.toStringMap()
         assertEquals(expectedSigma, actualSigma)
     }
 
     @Test
     fun test5() {
-        val sourceEquation = parseEquation("Ax", "y")
+        val sourceEquation = parseEquation("ABxy", "yBAx")
         val expectedSigma = mapOf(
-            "x" to "B",
+            "x" to "",
             "y" to "A",
         )
-        val actualSigma = sourceEquation.wordEqSat().sigma.toStringMap()
+        val result = sourceEquation.wordEqSat()
+        assertTrue(result.isSolved)
+        val actualSigma = result.sigma.toStringMap()
         assertEquals(expectedSigma, actualSigma)
     }
 
     @Test
     fun testNoSolution1() {
         val sourceEquation = parseEquation("A", "B")
-        assertThrows<JezNoSolutionException> {
-            sourceEquation.wordEqSat()
-        }
+        val result = sourceEquation.wordEqSat()
+        assertFalse(result.isSolved)
     }
 
     @Test
     fun testNoSolution2() {
         val sourceEquation = parseEquation("x", "Ax")
-        assertThrows<JezNoSolutionException> {
-            sourceEquation.wordEqSat()
-        }
+        val result = sourceEquation.wordEqSat()
+        assertFalse(result.isSolved)
     }
 
 }

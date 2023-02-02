@@ -25,12 +25,16 @@ fun main() {
     val result = try {
         equation.wordEqSat()
     } catch (e: Exception) {
-        println("Unfortunately, equation wasn't solved.")
+        println("Unfortunately, exception was thrown while solving the equation.")
         return
     }
 
     try {
-        printResult(result)
+        if (result.isSolved) {
+            printResult(result)
+        } else {
+            println("Unfortunately, solution wasn't found.")
+        }
         writeDOT(result)
     } catch (e: Exception) {
         e.printStackTrace()
