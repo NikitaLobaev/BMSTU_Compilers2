@@ -89,6 +89,8 @@ private fun printResult(result: JezResult) {
 }
 
 private fun writeDOT(result: JezResult) {
+    println()
+    print("Writing DOT-representation...")
     val timeMs = System.currentTimeMillis()
     val graphStr = result.history.dot()
 
@@ -99,10 +101,14 @@ private fun writeDOT(result: JezResult) {
     graphDOTFile.createNewFile()
     graphDOTFile.printWriter().use { printWriter ->
         printWriter.println(graphStr)
+        printWriter.flush()
+        printWriter.close()
     }
 
     val resultPNGFile = File(workingDirectory, "$timeMs.png")
     """dot -Tpng ${graphDOTFile.path} -o ${resultPNGFile.path}""".runCommand()
+
+    println(" SUCCESS")
 }
 
 /**

@@ -1,6 +1,5 @@
 package lobaevni.compilers.jez
 
-import io.github.rchowell.dotlin.DotEdgeAttrStmt
 import io.github.rchowell.dotlin.DotRootGraph
 import io.github.rchowell.dotlin.digraph
 import lobaevni.compilers.jez.JezHeuristics.findSideContradictions
@@ -31,16 +30,20 @@ internal data class JezState(
     val history: JezHistory = JezHistory(),
 )
 
+private const val JEZ_HISTORY_MAX_NODES_COUNT: Long = 300
+
 internal data class JezHistory(
     val graph: DotRootGraph = digraph(JEZ_HISTORY_GRAPH_NAME) {},
     private var lastEquationStr: String? = null,
+    private var nodesCount: Long = 0,
 ) {
 
     fun addEquation(equation: JezEquation, comment: String = "", updateLast: Boolean = true) {
+        if (nodesCount == JEZ_HISTORY_MAX_NODES_COUNT) return
+        nodesCount++
+
         val equationStr = "\"$equation\""
-        if (equationStr == lastEquationStr) {
-            return
-        }
+        if (equationStr == lastEquationStr) return
 
         graph.apply {
             if (updateLast) {
@@ -92,9 +95,7 @@ object Jez {
             newEquation = newEquation.blockComp(state)
 
             val letters = newEquation.getSideLetters()
-            for (i in 1..2) {
-                newEquation = newEquation.pairComp(state, letters.first, letters.second)
-            }
+            newEquation = newEquation.pairComp(state, letters.first, letters.second)
             iteration++
         }
 
