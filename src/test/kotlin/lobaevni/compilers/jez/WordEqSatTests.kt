@@ -5,7 +5,6 @@ import lobaevni.compilers.jez.Utils.parseEquation
 import lobaevni.compilers.jez.Utils.toStringMap
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 
 class WordEqSatTests {
 
@@ -58,10 +57,10 @@ class WordEqSatTests {
 
     @Test
     fun test5() {
-        val sourceEquation = parseEquation("ABxy", "yBAx")
+        val sourceEquation = parseEquation("ABxy", "xBAy")
         val expectedSigma = mapOf(
-            "x" to "",
-            "y" to "A",
+            "x" to "A",
+            "y" to "",
         )
         val result = sourceEquation.wordEqSat()
         assertTrue(result.isSolved)
